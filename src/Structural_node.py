@@ -25,7 +25,7 @@ class Structural_node(Node_iface):
         self._links.append(link)
         self._connect(node_one, port_one, link)
         self._connect(node_two, port_two, link)
-        link.finalize()
+        # link.finalize()
 
 ################################################################################
 # protected

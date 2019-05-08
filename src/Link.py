@@ -20,7 +20,6 @@ class Link:
     def name(self):
         return self._name[:]
 
-
     def register(self, port):
         if self._one==None:
             self._one=port
@@ -35,18 +34,26 @@ class Link:
         else:
             raise Exception("this should never happen")
 
-    def finalize(self):
-        check1=isinstance(self._one, Port_group)
-        check2=isinstance(self._two, Port_group)
-        if check1 == True and check2 == True:
-            self._sublinks=[]
-            if self._one.port_num == 0 and self._two.port_num > 0:
-                self._finalize(self._two, self._one)
-            elif self._one.port_num > 0 and self._two.port_num == 0:
-                self._finalize(self._one, self._two)
-            else:
-                raise Exception("{}.finalize(): houston, we have a problem here".format(
-                    __file__))
+    # def finalize(self):
+    #     check1=isinstance(self._one, Port_group)
+    #     check2=isinstance(self._two, Port_group)
+    #     if check1 == True and check2 == True:
+    #         self._sublinks=[]
+    #         if self._one.port_num == 0 and self._two.port_num > 0:
+    #             self._finalize(self._two, self._one)
+    #         elif self._one.port_num > 0 and self._two.port_num == 0:
+    #             self._finalize(self._one, self._two)
+    #         else:
+    #             # this method is rather exotic solution, based on behavioral
+    #             # model. may easily break in future
+    #             # if this exception is triggered, then remove this method and
+    #             # come up with propper propagation mechanics.
+    #             # btw this method is only used in Structural_node.py at the time
+    #             # this message was written
+    #             raise Exception(
+    #                 "{}.finalize(): houston, we have a problem here".format(
+    #                     __file__)
+    #             )
 
     def other_name(self, port):
         portname=port.name

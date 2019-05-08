@@ -59,10 +59,13 @@ class Port:
                 +" new connection {}\n".format(port.name)
                 +" old connection {}\n".format(self._link.other_name(self))
             )
-        self._update_cfg(port)
-        self._update_dir(port)
+        self._update_from_port(port)
         self._link=link
         return self
+
+    def _update_from_port(self, port):
+        self._update_cfg(port)
+        self._update_dir(port)
 
     def _update_cfg(self, port):
         other_cfg=port.cfg
