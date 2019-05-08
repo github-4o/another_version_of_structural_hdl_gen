@@ -1,10 +1,13 @@
+from .service.Reporter import reporter
+
+
 def invert_dir(dir):
     if dir == "in":
         return "out"
     elif dir == "out":
         return "in"
     else:
-        raise Exception("invalid dir")
+        raise Exception("invalid dir:", dir)
 
 class Port:
     def __init__(self, parent, dir=None, cfg=None):
@@ -15,8 +18,20 @@ class Port:
         self._link=None
 
     @property
+    def is_unconnected(self):
+        return self._link == None
+
+    @property
     def name(self):
         return self._parent.get_port_name(self)
+
+    @property
+    def hierarchial_name(self):
+        if self.internal:
+            add="(int)"
+        else:
+            add="(ext)"
+        return self._parent.hierarchial_name+"."+self.name+add
 
     @property
     def internal(self):
@@ -31,6 +46,7 @@ class Port:
 
     @property
     def bound_port(self):
+        raise Exception("restricted")
         return self._bound_port.copy()
 
     @property
@@ -48,24 +64,62 @@ class Port:
 
     def dump_ports(self, indent="        "):
         if self._cfg == None:
-            return indent+"{}: {} <port with empty cfg> ;\n".format(self.name, self._dir)
+            return indent+"{}: {} <port with empty cfg> ;\n".format(
+                self.name, self._dir)
         else:
             raise Exception("this should never happen")
 
-    def connect_to(self, port, link):
+    def connect_to(self, link):
+        reporter.print(
+            "port {}: connected to link {}",
+            [self.hierarchial_name, link.hierarchial_name]
+        )
+        # access check. it IS overengineering, to catch hypothetical
+        # invalid call sequences
         if self._link != None:
             raise Exception(
-                "port reconnection detected {}\n".format(self.name)
-                +" new connection {}\n".format(port.name)
-                +" old connection {}\n".format(self._link.other_name(self))
+                "port reconnection detected {}\n".format(self.hierarchial_name)
+                +" new connection {}\n".format(link.other_port(self).hierarchial_name)
+                +" old connection {}\n".format(self._link.other_port(self).hierarchial_name)
             )
-        self._update_from_port(port)
         self._link=link
-        return self
+        reporter.less_indent()
 
-    def _update_from_port(self, port):
+    def update_from_link(self):
+        reporter.print(
+            "port {}: updating from link {}",
+            [self.hierarchial_name, self._link.hierarchial_name]
+        )
+        if self._link == None:
+            raise Exception("this should never happen")
+
+        other_port=self._link.other_port(self)
+        if other_port == None:
+            raise Exception("this should never happen")
+
+        if other_port != None:
+            self._update_from_port(other_port)
+        else:
+            raise Exception("this should never happen")
+        reporter.less_indent()
+
+    def update_from_bound_port(self, bound_port, port):
+        reporter.print(
+            "port {}: updating from bound port {}",
+            [self.hierarchial_name, self._bound_port.hierarchial_name]
+        )
+        if self._bound_port != bound_port:
+            raise Exception("this should never happen")
+
+        self._update_from_port(port, trigger_chain_update=False)
+        reporter.less_indent()
+
+    def _update_from_port(self, port, trigger_chain_update=True):
         self._update_cfg(port)
         self._update_dir(port)
+        if trigger_chain_update == True:
+            if self._bound_port != None:
+                self._bound_port.update_from_bound_port(self, port)
 
     def _update_cfg(self, port):
         other_cfg=port.cfg
@@ -73,7 +127,7 @@ class Port:
             for name in other_cfg:
                 if name in self._cfg:
                     if self._cfg[name] != other_cfg[name]:
-                        raise Exception("failed to update cfg on connect_to()")
+                        raise Exception("failed to update cfg on _update_cfg()")
                 else:
                     self._cfg[name]=other_cfg[name]
 
@@ -84,10 +138,7 @@ class Port:
             else:
                 do_inversion=True
         else:
-            if port.internal == True:
-                raise Exception("this should never happen")
-            else:
-                do_inversion=False
+            do_inversion=False
 
         other_port_dir=port.dir
         if other_port_dir != None:

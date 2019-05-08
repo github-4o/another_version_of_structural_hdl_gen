@@ -2,7 +2,7 @@ from src.test_nodes.Test_top_structural_node import Test_top_structural_node
 
 
 def dump_files(hdl):
-    print(hdl)
+    # print(hdl)
     for i in hdl:
         print("writing file ", i[0])
         with open("output/"+i[0], "w") as f:
